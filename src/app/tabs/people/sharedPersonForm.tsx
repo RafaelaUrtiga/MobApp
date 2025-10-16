@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
-import { DB, Event } from "../../../src/storage/db";
+import { DB, Event } from "../../../storage/db";
 import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";

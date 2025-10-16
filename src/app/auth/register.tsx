@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
-import { useAuth } from "../../src/context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 
 const schema = Yup.object().shape({
   name: Yup.string().required("Obrigatório"),

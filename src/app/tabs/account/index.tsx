@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import { useAuth } from "../../../src/context/AuthContext";
+import { useAuth } from "../../../context/AuthContext";
 import { useState } from "react";
 
 export default function AccountScreen() {

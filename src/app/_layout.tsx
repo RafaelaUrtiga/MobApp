@@ -1,10 +1,11 @@
 import { Stack } from "expo-router";
-import { AuthProvider, useAuth } from "../src/context/AuthContext";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import { useEffect } from "react";
 import { router } from "expo-router";
 
 function RootNavigator() {
   const { isAuthenticated, isAuthReady } = useAuth();
+
 
   useEffect(() => {
     if (!isAuthReady) return;

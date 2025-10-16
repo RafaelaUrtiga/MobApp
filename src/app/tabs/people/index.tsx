@@ -6,8 +6,8 @@ import {
   StyleSheet,
 } from "react-native";
 import { useCallback, useState } from "react";
-import { DB, Event, Person } from "../../../src/storage/db";
-import { PersonItem } from "../../../src/components/PersonItem";
+import { DB, Event, Person } from "../../../storage/db";
+import { PersonItem } from "../../../components/PersonItem";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 

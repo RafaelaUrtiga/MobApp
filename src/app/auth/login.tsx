@@ -9,7 +9,7 @@ import {
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { Link } from "expo-router";
-import { useAuth } from "../../src/context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 

@@ -7,8 +7,8 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useFocusEffect, router } from "expo-router";
-import { DB, Event } from "../../../src/storage/db";
-import { EventItem } from "../../../src/components/EventItem";
+import { DB, Event } from "../../../storage/db";
+import { EventItem } from "../../../components/EventItem";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback } from "react";
 

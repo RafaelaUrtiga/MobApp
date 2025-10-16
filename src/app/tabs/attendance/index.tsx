@@ -1,6 +1,6 @@
 import { View, Text, FlatList, Switch, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
-import { DB, Event, Person } from "../../../src/storage/db";
+import { DB, Event, Person } from "../../../storage/db";
 
 export default function AttendanceScreen() {
   const [events, setEvents] = useState<Event[]>([]);

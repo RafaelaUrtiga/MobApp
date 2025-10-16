@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
-import { DB } from "../../../src/storage/db";
+import { DB } from "../../../storage/db";
 import { useLocalSearchParams, router } from "expo-router";
 import { useEffect, useState } from "react";
 
