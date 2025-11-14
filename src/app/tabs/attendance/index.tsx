@@ -12,14 +12,19 @@ export default function AttendanceScreen() {
     (async () => {
       const ev = await DB.listEvents();
       setEvents(ev);
-      const id = ev[0]?.id ?? null;
-      setEventId(id);
-      if (id) {
-        const list = await DB.listPeopleByEvent(id);
+
+      const firstId = ev[0]?.id ?? null;
+      setEventId(firstId);
+
+      if (firstId) {
+        const list = await DB.listPeopleByEvent(firstId); // já usa Firestore
         setPeople(list);
-        const att = await DB.listAttendanceByEvent(id);
+
+        const att = await DB.listAttendanceByEvent(firstId); // Firestore também
         const map: Record<string, boolean> = {};
-        att.forEach((a) => (map[a.personId] = a.present));
+        att.forEach((a) => {
+          map[a.personId] = a.present;
+        });
         setPresentMap(map);
       }
     })();
@@ -27,8 +32,9 @@ export default function AttendanceScreen() {
 
   const toggle = async (pid: string, val: boolean) => {
     if (!eventId) return;
-    setPresentMap((p) => ({ ...p, [pid]: val }));
-    await DB.setPresence(eventId, pid, val);
+    // otimista no estado
+    setPresentMap((prev) => ({ ...prev, [pid]: val }));
+    await DB.setPresence(eventId, pid, val); // grava no Firestore (attendance)
   };
 
   return (
@@ -36,6 +42,7 @@ export default function AttendanceScreen() {
       <Text style={{ fontWeight: "700", marginBottom: 8 }}>
         Evento: {events.find((e) => e.id === eventId)?.title || "—"}
       </Text>
+
       <FlatList
         data={people}
         keyExtractor={(i) => i.id}

@@ -6,10 +6,11 @@ import {
   Image,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
-import { DB, Event, Person } from "../../../storage/db";
+import { DB, Event } from "../../../storage/db";
 import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -18,6 +19,7 @@ import { Picker } from "@react-native-picker/picker";
 const schema = Yup.object().shape({
   name: Yup.string().required("Obrigatório"),
   email: Yup.string().email("Email inválido").optional(),
+  phone: Yup.string().optional(),
 });
 
 export default function PersonForm() {
@@ -25,20 +27,20 @@ export default function PersonForm() {
   const isEdit = !!id;
 
   const [events, setEvents] = useState<Event[]>([]);
-  // Estado: null => nenhum selecionado. Quando salvar, convertemos para "" se necessário.
   const [eventId, setEventId] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
+  const [uploading, setUploading] = useState(false);
 
   const [initialValues, setInitialValues] = useState({
     name: "",
     email: "",
+    phone: "",
   });
 
   const camRef = useRef<CameraView | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
   const [showCamera, setShowCamera] = useState(false);
 
-  // Carrega eventos e, se for edição, carrega a pessoa
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -47,15 +49,14 @@ export default function PersonForm() {
       setEvents(eventos);
 
       if (isEdit && id) {
-        const people = await DB.listPeople();
-        const person = people.find((p) => p.id === id);
+        const person = await DB.getPerson(id);
         if (person && mounted) {
           setInitialValues({
             name: person.name ?? "",
             email: person.email ?? "",
+            phone:person.phone ?? "",
           });
-          // se eventId for string vazia no storage, interpretamos como "nenhum"
-          setEventId(person.eventId ? person.eventId : null);
+          setEventId(person.eventId || null);
           setPhotoUri(person.photoUri ?? undefined);
         }
       }
@@ -116,16 +117,48 @@ export default function PersonForm() {
         initialValues={initialValues}
         validationSchema={schema}
         onSubmit={async (vals) => {
-          // Se nenhum evento selecionado, gravamos "" (string vazia) porque seu DB exige eventId string
-          const eventIdToSave = eventId ?? "";
-          await DB.savePerson({
-            id: id as string | undefined,
-            name: vals.name,
-            email: vals.email,
-            eventId: eventIdToSave,
-            photoUri,
-          });
-          router.back();
+          try {
+            setUploading(true);
+            const eventIdToSave = eventId ?? "";
+
+            let finalPhotoUri = photoUri;
+
+            // Se tem foto e é uma URI local (começa com file://), faz upload
+            if (photoUri && photoUri.startsWith("file://")) {
+              if (isEdit && id) {
+                finalPhotoUri = await DB.uploadPersonPhoto(id, photoUri);
+              } else {
+                // Para novo cadastro, cria um ID temporário
+                const tempId = `temp_${Date.now()}`;
+                finalPhotoUri = await DB.uploadPersonPhoto(tempId, photoUri);
+              }
+            }
+
+            if (isEdit && id) {
+              await DB.updatePerson(id, {
+                name: vals.name,
+                email: vals.email,
+                phone: vals.phone,
+                eventId: eventIdToSave,
+                photoUri: finalPhotoUri,
+              });
+            } else {
+              await DB.addPerson({
+                name: vals.name,
+                phone: vals.phone || "",
+                email: vals.email,
+                eventId: eventIdToSave,
+                photoUri: finalPhotoUri,
+              });
+            }
+
+            router.back();
+          } catch (error) {
+            console.error("Erro ao salvar pessoa:", error);
+            Alert.alert("Erro", "Não foi possível salvar a pessoa");
+          } finally {
+            setUploading(false);
+          }
         }}
       >
         {({
@@ -179,6 +212,18 @@ export default function PersonForm() {
               <Text style={s.err}>{errors.email}</Text>
             )}
 
+            <TextInput
+              style={s.input}
+              placeholder="Telefone (opcional)"
+              keyboardType="phone-pad"
+              value={values.phone}
+              onChangeText={handleChange("phone")}
+              onBlur={handleBlur("phone")}
+            />
+            {touched.phone && errors.phone && (
+              <Text style={s.err}>{errors.phone}</Text>
+            )}
+
             {photoUri ? (
               <Image
                 source={{ uri: photoUri }}
@@ -194,12 +239,21 @@ export default function PersonForm() {
             <TouchableOpacity
               style={[s.btn, { backgroundColor: "#888" }]}
               onPress={openCamera}
+              disabled={uploading}
             >
               <Text style={s.btnText}>Tirar foto (opcional)</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={s.btn} onPress={() => handleSubmit()}>
-              <Text style={s.btnText}>{isEdit ? "Salvar" : "Cadastrar"}</Text>
+            <TouchableOpacity
+              style={s.btn}
+              onPress={() => handleSubmit()}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={s.btnText}>{isEdit ? "Salvar" : "Cadastrar"}</Text>
+              )}
             </TouchableOpacity>
           </>
         )}

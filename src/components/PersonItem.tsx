@@ -36,3 +36,4 @@ const s = StyleSheet.create({
   name: { fontWeight: "700" },
   email: { color: "#666" },
 });
+

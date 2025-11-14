@@ -4,6 +4,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Formik } from "formik";
 import * as Yup from "yup";
@@ -30,18 +31,19 @@ export default function EventForm() {
 
   useEffect(() => {
     (async () => {
-      if (isEdit) {
-        const e = await DB.getEvent(id!);
-        if (e)
+      if (isEdit && id) {
+        const e = await DB.getEvent(id);
+        if (e) {
           setInitial({
             title: e.title,
-            date: e.date,
+            date: e.date.toISOString(),
             location: e.location || "",
             description: e.description || "",
           });
+        }
       }
     })();
-  }, [id]);
+  }, [id, isEdit]);
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
@@ -51,8 +53,35 @@ export default function EventForm() {
         initialValues={initial}
         validationSchema={schema}
         onSubmit={async (vals) => {
-          await DB.saveEvent({ id: id as string | undefined, ...vals });
-          router.back();
+          try {
+            const eventDate = new Date(vals.date);
+
+            if (isNaN(eventDate.getTime())) {
+              Alert.alert("Erro", "Data inválida");
+              return;
+            }
+
+            if (isEdit && id) {
+              await DB.updateEvent(id, {
+                title: vals.title,
+                description: vals.description,
+                location: vals.location,
+                date: eventDate,
+              });
+            } else {
+              await DB.addEvent({
+                title: vals.title,
+                description: vals.description,
+                location: vals.location,
+                date: eventDate,
+              });
+            }
+
+            router.back();
+          } catch (e) {
+            console.error("Erro ao salvar evento:", e);
+            Alert.alert("Erro", "Não foi possível salvar o evento");
+          }
         }}
       >
         {({
